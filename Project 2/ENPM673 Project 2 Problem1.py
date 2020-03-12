@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[5]:
+# # ENPM 673 | Project 2 | Question 1
+
+# In[1]:
 
 
 #importing necessary libraries
@@ -9,7 +11,7 @@ import cv2
 import numpy as np
 
 
-# In[6]:
+# In[2]:
 
 
 #fucntion to adjust the gamma value of the function
@@ -19,11 +21,16 @@ def adjust_gamma(image, gamma=1.0):
     return cv2.LUT(image.astype(np.uint8), table.astype(np.uint8))
 
 
-# In[7]:
+# In[10]:
 
 
 #getting the video feed
 camera = cv2.VideoCapture('Night Drive - 2689.mp4')
+# Define the codec and create VideoWriter object
+# fourcc = cv2.VideoWriter_fourcc(*'XVID')
+fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+out = cv2.VideoWriter('output.avi',fourcc, 20.0, (1920,1080))
+
 #checking if video is being played
 while(camera.isOpened()):
     ret, frame = camera.read()
@@ -46,9 +53,12 @@ while(camera.isOpened()):
     improved_image = cv2.cvtColor(img2hsv, cv2.COLOR_HSV2BGR)
     #showing the image
     cv2.imshow('improved_image',improved_image)
+    #writing the video
+    out.write(improved_image)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 #releasing the video feed
+out.release()
 camera.release()
 cv2.destroyAllWindows()
 
