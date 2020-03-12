@@ -1,3 +1,8 @@
+EDIT :
+One small confusion that might arise for you in question 2 part 1 is the depiction of the path in this file. Hence to make it easier, Please run this code with the images organized in the same path as the .py file. Also, please ignore the writeup on how the path WAS SUPPOSED TO BE MENTIONED as per the README for question 2 part 1. This should run just fine. A video of the run is uploaded on Youtube as well, linked in the README.
+
+Please feel free to contact me, incase you face any issue (especially an image.shape error) This is because the code is working fine, any error caused is because of the directory.
+----  ----  ----   ----   ----   ----   ----   ----  ---- ----  ----  ----   ----   ----   ----   ----   ----  ---- ----  ----  ----   -
 Project 1 Submission - ENPM673 - Perception for Autonomous Robotics
 -------------------------------------------------------------
 There are three codes attached without any sub-directories. 
