@@ -45,7 +45,7 @@ https://github.com/govindak-umd/ENPM673/tree/master/Project%203
 ------------------------------------------------------------------------------------------------------------------------------------
 ## All the media files have been linked above. Few images have been attached as well.
 -----------------------------------------------------------------------------------------------------------------------------------
-## Group members :
+## Group members
 
 Ashwin Prabhakar
 Govind Ajith Kumar
