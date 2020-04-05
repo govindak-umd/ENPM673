@@ -1,21 +1,17 @@
-#!/usr/bin/env python
-# coding: utf-8
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Apr  5 01:12:16 2020
 
-# In[1]:
-
-
+@author: nsraj
+"""
 import cv2
 import numpy as np
 from matplotlib import pyplot as plt
 from pathlib import Path
 import os
-import time
-import pylab as pl
-from scipy.stats import multivariate_normal
 from PIL import Image
 import glob
 from os import listdir
-from PIL import Image as PImage
 import imageio
 import imutils
 from imutils import contours
@@ -57,7 +53,12 @@ data.shape
 
 
 # In[4]:
-
+def gaussian_pdf(data,mean,covar):
+    data_mean = np.matrix(data-mean)
+    covar_inv = np.linalg.pinv(covar)
+    pdf = (2.0 * np.pi) ** (-len(data[1]) / 2.0) * (1.0 /np.linalg.det(covar) ** 0.5) *\
+            np.exp(-0.5 * np.sum(np.multiply(data_mean*covar_inv,data_mean),axis=1))
+    return pdf
 
 #generate initial parameters
 def initial_parameters(data,K):    
@@ -98,8 +99,8 @@ def train_GMM(data,K,mean,covar,weights):
         #  axis = 0 -> sum along the data points
         for i in range(K): 
             #calulate the likelihood probablity (Numerator in the formula)
-            likelihood_prob_a = multivariate_normal.pdf(data,mean[i],covar[i]) * weights[i]
-            likelihood_prob[:,i] = np.array(likelihood_prob_a)
+            likelihood_prob[:,i:i+1] = gaussian_pdf(data,mean[i],covar[i]) * weights[i]
+            #likelihood_prob[:,i] = np.array(likelihood_prob_a)
         #caclulate the log likelihood by summating the likelihood probabilities for Maximum likelihood Estimation
         log_likelihood = np.sum(np.log(np.sum(likelihood_prob, axis = 1)))
         log_likelihood_values.append(log_likelihood)
@@ -163,11 +164,9 @@ while (cap.isOpened()):
     image = np.concatenate((image_1,image_2),axis=0)
     img = np.reshape(image,(image.shape[0],1))
     prob = np.zeros((img.shape[0],K))
-    likelihood = np.zeros((img.shape[0],K))
     for j in range(K):
         #calculate the likelihood
-        prob[:,j] = updated_weights[j]*multivariate_normal.pdf(img,updated_mean[j],updated_covar[j])
-        likelihood = prob.sum(1)
+        prob[:,j:j+1] = updated_weights[j]*gaussian_pdf(img,updated_mean[j],updated_covar[j])
     #calculate the prob sum which is a 1d array
     sum_prob = np.sum(prob, axis = 1)
     green_prob = sum_prob[:img_x*img_y]
@@ -218,11 +217,4 @@ for image in images:
 
 out.release()
     
-cap.release()   
-
-
-# In[ ]:
-
-
-
-
+cap.release()

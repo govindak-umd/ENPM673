@@ -1,21 +1,15 @@
-#!/usr/bin/env python
-# coding: utf-8
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Apr  5 01:15:03 2020
 
-# In[7]:
-
+@author: nsraj
+"""
 
 import cv2
 import numpy as np
-from matplotlib import pyplot as plt
-from pathlib import Path
-import os
-import time
-import pylab as pl
-from scipy.stats import multivariate_normal
 from PIL import Image
 import glob
 from os import listdir
-from PIL import Image as PImage
 import imageio
 import imutils
 from imutils import contours
@@ -62,7 +56,12 @@ prev_cnts = 0
 
 
 # In[12]:
-
+def gaussian_pdf(data,mean,covar):
+    data_mean = np.matrix(data-mean)
+    covar_inv = np.linalg.pinv(covar)
+    pdf = (2.0 * np.pi) ** (-len(data[1]) / 2.0) * (1.0 /np.linalg.det(covar) ** 0.5) *\
+            np.exp(-0.5 * np.sum(np.multiply(data_mean*covar_inv,data_mean),axis=1))
+    return pdf
 
 def yellow_gmm(frame,K,updated_mean,updated_covar,updated_weights):
     curr_image = frame
@@ -73,11 +72,9 @@ def yellow_gmm(frame,K,updated_mean,updated_covar,updated_weights):
     image = np.concatenate((image_1,image_2),axis=0)
     img = np.reshape(image,(image.shape[0],1))
     prob = np.zeros((img.shape[0],K))
-    likelihood = np.zeros((img.shape[0],K))
     for j in range(K):
         #calculate the likelihood
-        prob[:,j] = updated_weights[j]*multivariate_normal.pdf(img,updated_mean[j],updated_covar[j])
-        likelihood = prob.sum(1)
+        prob[:,j:j+1] = updated_weights[j]*gaussian_pdf(img,updated_mean[j],updated_covar[j])
     #calculate the prob sum which is a 1d array
     sum_prob = np.sum(prob, axis = 1)
     green_prob = sum_prob[:img_x*img_y]
@@ -124,11 +121,9 @@ def green_gmm(frame,K,updated_mean,updated_covar,updated_weights):
     #Take the red channel and reshape it to 1-d array of pixel intensities
     img = np.reshape(img, (img_x*img_y,1))
     prob = np.zeros((img.shape[0],K))
-    likelihood = np.zeros((img.shape[0],K))
     for j in range(K):
         #calculate the likelihood
-        prob[:,j] = updated_weights[j]*multivariate_normal.pdf(img,updated_mean[j],updated_covar[j])
-        likelihood = prob.sum(1)
+        prob[:,j:j+1] = updated_weights[j]*gaussian_pdf(img,updated_mean[j],updated_covar[j])
     #calculate the prob sum which is a 1d array
     sum_prob = np.sum(prob, axis = 1)
     pixel_probabilities = np.reshape(sum_prob,(img_x,img_y))
@@ -174,11 +169,9 @@ def red_gmm(frame,K,updated_mean,updated_covar,updated_weights):
     #Take the red channel and reshape it to 1-d array of pixel intensities
     img = np.reshape(img, (img_x*img_y,1))
     prob = np.zeros((img_x*img_y,K))
-    likelihood = np.zeros((img_x*img_y,K))
     for j in range(K):
         #calculate the likelihood
-        prob[:,j] = updated_weights[j]*multivariate_normal.pdf(img,updated_mean[j],updated_covar[j])
-        likelihood = prob.sum(1)
+        prob[:,j:j+1] = updated_weights[j]*gaussian_pdf(img,updated_mean[j],updated_covar[j])
     #calculate the prob sum which is a 1d array
     sum_prob = np.sum(prob, axis = 1)
     pixel_probabilities = np.reshape(sum_prob,(img_x,img_y))
@@ -247,6 +240,3 @@ for image in images:
 out.release()
 
 cap.release()
-
-
-
