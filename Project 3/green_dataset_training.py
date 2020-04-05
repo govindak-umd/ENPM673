@@ -92,6 +92,9 @@ def train_GMM(data, K, mean, covar, weights):
             # plotting the likelihood graph
             plt.plot(log_likelihood_values)
             plt.title("Log-likelihood vs Iterations")
+            plt.title("Log-likelihood vs Iterations -  GREEN BUOY")
+            plt.savefig('green_log_likelihood.png')
+            plt.show()
             return mean, covar, weights
             break
 

@@ -51,7 +51,7 @@ while (cap.isOpened()):
     output = np.zeros_like(frame)
     #Assign the calulated probablities to every pixel in the red channel
     output[:,:,1] = pixel_probabilities
-    cv2.imshow('Green masked', output)
+    # cv2.imshow('Green masked', output)
     #blur = cv2.GaussianBlur(output,(5,5),0)
     #Do filtering and edge detection to detect the buoys
     blur = cv2.medianBlur(output,5)

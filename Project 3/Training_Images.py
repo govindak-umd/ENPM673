@@ -1,15 +1,7 @@
 import cv2
-import numpy as np
-from matplotlib import pyplot as plt
-from pathlib import Path
-import os
-import time
 import pylab as pl
 from roipoly import roipoly
-from PIL import Image
 import glob
-from os import listdir
-from PIL import Image as PImage
 import imageio
 
 count = 1

@@ -55,12 +55,12 @@ while (cap.isOpened()):
     output = np.zeros_like(frame)
     #Assign the calulated probablities to every pixel in the red channel
     output[:,:,2] = pixel_probabilities
-    cv2.imshow('Red masked', output)
+    # cv2.imshow('Red masked', output)
     #blur = cv2.GaussianBlur(output,(5,5),0)
     #Do filtering and edge detection to detect the buoys
     blur = cv2.medianBlur(output,5)
     edged = cv2.Canny(blur,20,255 )
-    cv2.imshow("Edge detection- Canny",edged)
+    # cv2.imshow("Edge detection- Canny",edged)
     #Detect contours with circle shape
     cnts,h = cv2.findContours(edged, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     try:  
