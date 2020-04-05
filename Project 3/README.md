@@ -1,31 +1,31 @@
 
-Project 3 Submission - ENPM673 - Perception for Autonomous Robotics
+Project 3 Submission - ENPM673 - Perception for Autonomous Robotics<br/>
 
-Submission date : 
+Submission date : <br/>
 16 April - 2020
 -------------------------------------------------------------
-There are  10 codes attached without any sub-directories. 
+There are  10 codes attached without any sub-directories. <br/>
 ------------------------------------------------------------------------------------------------------------------------------------
 The codes in .py files are as follows:
-
+<br/>
 ## Codes are :
- 
-roipoly.py - > does the cropping using points given by the user
-Training_Images.py - > Python script to train the 
-Frame_Splitting.py - > Splits the frames for testing and training
-green_crop.py - > just to crop the green image even further
-Colour_Hist_Determine.py - > to get the RGB histogram as well as R,G and B histograms seperately
-EM_1d_Gaussian.py - > Code for sample expectation maximization
-
-NOTE: Please make sure the path is given properly for the below images,
-NOTE: Also, in that case, make sure the data set is present as well
-1D_GMM_Green.py - > 1D gaussian for the green buoy
-1D_GMM_Orange.py - > 1D gaussian for the Orange buoy
-1D_GMM_Yellow.py- > 1D gaussian for the Yellow buoy
-combined_buoys.py -> Combined output for all the buoys together
-
-NOTE : Running the last file should give all the outputs in one image itself
-
+ <br/>
+roipoly.py - > does the cropping using points given by the user<br/>
+Training_Images.py - > Python script to train the <br/>
+Frame_Splitting.py - > Splits the frames for testing and training<br/>
+green_crop.py - > just to crop the green image even further<br/>
+Colour_Hist_Determine.py - > to get the RGB histogram as well as R,G and B histograms seperately<br/>
+EM_1d_Gaussian.py - > Code for sample expectation maximization<br/>
+<br/>
+NOTE: Please make sure the path is given properly for the below images,<br/>
+NOTE: Also, in that case, make sure the data set is present as well<br/>
+1D_GMM_Green.py - > 1D gaussian for the green buoy<br/>
+1D_GMM_Orange.py - > 1D gaussian for the Orange buoy<br/>
+1D_GMM_Yellow.py- > 1D gaussian for the Yellow buoy<br/>
+combined_buoys.py -> Combined output for all the buoys together<br/>
+<br/>
+NOTE : Running the last file should give all the outputs in one image itself<br/>
+<br/>
 ------------------------------------------------------------------------------------------------------------------------------------
 ## The Youtube links to the videos are as follows:
 
@@ -57,16 +57,16 @@ OpenCV 4.xx
 ------------------------------------------------------------------------------------------------------------------------------------
 ## Libraries used:
 
-import cv2
-import numpy as np
-from scipy.stats import multivariate_normal
-from imutils import contours
-from matplotlib import pyplot as plt
-import glob
-import imageio
-from roipoly import roipoly
-import os
-
+import cv2<br/>
+import numpy as np<br/>
+from scipy.stats import multivariate_normal<br/>
+from imutils import contours<br/>
+from matplotlib import pyplot as plt<br/>
+import glob<br/>
+import imageio<br/>
+from roipoly import roipoly<br/>
+import os<br/>
+<br/>
 -----------------------------------------------------------------------------------------------------------------------------------
 
 ____________________________________________________________________________________________________________________________________
