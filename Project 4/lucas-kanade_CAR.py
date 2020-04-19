@@ -24,7 +24,15 @@ first_image = img_array[0]
 ref_point = []
 crop = False
 
-def LucasKanadeAffine(It, It1):
+def gamma_correction(img, correction):
+    img = img/255.0
+    img = cv2.pow(img, correction)
+    return np.uint8(img*255)
+
+def Average(lst):
+    return sum(lst) / len(lst)
+
+def LucasKanadeAffine(It, It1, threshold=0.005, iters=15):
     '''
     [input]
     * It - Template image
@@ -37,125 +45,147 @@ def LucasKanadeAffine(It, It1):
     '''
 
     # Initial parameters
-    M = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
-    threshold = 1
-    dp = 10
-    p = np.zeros(6)
-    Iy, Ix = np.gradient(It1)
-    x1, y1, x2, y2 = 0, 0, It.shape[1], It.shape[0]
-    while np.square(dp).sum() > threshold:
+    M = np.asarray([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
+    p = np.asarray([0.0] * 6)
+    I = M
 
-        W = np.array([[1.0 + p[0], p[1], p[2]],
-                      [p[3], 1.0 + p[4], p[5]]])
+    # Iterate
+    # for i in range(iters):
+        # Step 1 - Warp image
+    for i in range(iters):
+        warp_img = affine_transform(It1, np.flip(M)[..., [1, 2, 0]])
 
-        x1_w = W[0, 0] * x1 + W[0, 1] * y1 + W[0, 2]
-        y1_w = W[1, 0] * x1 + W[1, 1] * y1 + W[1, 2]
-        x2_w = W[0, 0] * x2 + W[0, 1] * y2 + W[0, 2]
-        y2_w = W[0, 0] * x2 + W[0, 1] * y2 + W[0, 2]
+        # Step 2 - Compute error image with common pixels
+        mask = affine_transform(np.ones(It1.shape), np.flip(M)[..., [1, 2, 0]])
+        error_img = (mask * It) - (mask * warp_img)
+        #error_img = It-warp_img
+        # Step 3 - Compute and warp the gradient
+        gradient = np.dstack(np.gradient(It1)[::-1])
+        gradient[:, :, 0] = affine_transform(gradient[:, :, 0], np.flip(M)[..., [1, 2, 0]])
+        gradient[:, :, 1] = affine_transform(gradient[:, :, 1], np.flip(M)[..., [1, 2, 0]])
+        warp_gradient = gradient.reshape(gradient.shape[0] * gradient.shape[1], 2).T
 
-        x = np.arange(0, It.shape[0], 1)
-        y = np.arange(0, It.shape[1], 1)
+        # Step 4 - Evaluate jacobian parameters
+        H, W = It.shape
+        Jx = np.tile(np.linspace(0, W - 1, W), (H, 1)).flatten()
+        Jy = np.tile(np.linspace(0, H - 1, H), (W, 1)).T.flatten()
 
-        c = np.linspace(x1, x2, It.shape[1])
-        r = np.linspace(y1, y2, It.shape[0])
-        cc, rr = np.meshgrid(c, r)
+        # Step 5 - Compute the steepest descent images
+        steepest_descent = np.vstack([warp_gradient[0] * Jx, warp_gradient[0] * Jy,
+                                      warp_gradient[0], warp_gradient[1] * Jx, warp_gradient[1] * Jy,
+                                      warp_gradient[1]]).T
 
-        cw = np.linspace(x1_w, x2_w, It.shape[1])
-        rw = np.linspace(y1_w, y2_w, It.shape[0])
-        ccw, rrw = np.meshgrid(cw, rw)
+        # Step 6 - Compute the Hessian matrix
+        hessian = np.matmul(steepest_descent.T, steepest_descent)
 
-        spline = RectBivariateSpline(x, y, It)
-        T = spline.ev(rr, cc)
+        # Step 7/8 - Compute delta P
+        delta_p = np.matmul(np.linalg.inv(hessian), np.matmul(steepest_descent.T, error_img.flatten()))
 
-        spline1 = RectBivariateSpline(x, y, It1)
-        warpImg = spline1.ev(rrw, ccw)
+        # Step 9 - Update the parameters
+        p = p + delta_p
+        M = p.reshape(2, 3) + I
+        # Test for convergence
+        if np.linalg.norm(delta_p) <= threshold:
+            break
 
-        # compute error image
-        # errImg is (n,1)
-        err = T - warpImg
-        errImg = err.reshape(-1, 1)
 
-        # compute gradient
-        spline_gx = RectBivariateSpline(x, y, Ix)
-        Ix_w = spline_gx.ev(rrw, ccw)
-
-        spline_gy = RectBivariateSpline(x, y, Iy)
-        Iy_w = spline_gy.ev(rrw, ccw)
-        # I is (n,2)
-        I = np.vstack((Ix_w.ravel(), Iy_w.ravel())).T
-
-        # evaluate delta = I @ jac is (n, 6)
-        delta = np.zeros((It.shape[0] * It.shape[1], 6))
-
-        for i in range(It.shape[0]):
-            for j in range(It.shape[1]):
-                # I is (1,2) for each pixel
-                # Jacobiani is (2,6)for each pixel
-                I_indiv = np.array([I[i * It.shape[1] + j]]).reshape(1, 2)
-
-                jac_indiv = np.array([[j, 0, i, 0, 1, 0],
-                                      [0, j, 0, i, 0, 1]])
-                delta[i * It.shape[1] + j] = I_indiv @ jac_indiv
-
-        # compute Hessian Matrix
-        # H is (6,6)
-        H = delta.T @ delta
-
-        # compute dp
-        # dp is (6,6)@(6,n)@(n,1) = (6,1)
-        dp = np.linalg.inv(H) @ (delta.T) @ errImg
-
-        # update parameters
-        p[0] += dp[0, 0]
-        p[1] += dp[1, 0]
-        p[2] += dp[2, 0]
-        p[3] += dp[3, 0]
-        p[4] += dp[4, 0]
-        p[5] += dp[5, 0]
-
-    M = np.array([[1.0 + p[0], p[1], p[2]], [p[3], 1.0 + p[4], p[5]]])
+    # print('%d %.4f'%(i, np.linalg.norm(delta_p)))
     return M
 
 
 
-##bolt
-# rect_coordinates = [(int(0.25*269),int(0.25*75)), (int(0.25*300), int(0.25*139))]
-##dragon baby
-rect_coordinates = [(int(0.5*70),int(0.5*51)), (int(0.5*177), int(0.5*138))]
-# rect_coordinates = [(int(70),int(51)), (int(177), int(138))]
-# rect_coordinates = [(142, 67), (224, 166)]
-#car
-# rect_coordinates = [(int(scale_DOWN*70), int(scale_DOWN*51)), (int(scale_DOWN*177), int(scale_DOWN*138))]
+reduction = 0.25
+## car
+rect_coordinates = [(int(reduction*70),int(reduction*51)), (int(reduction*177), int(reduction*138))]
+
 rect = np.array([rect_coordinates[0][0], rect_coordinates[0][1], rect_coordinates[1][0], rect_coordinates[1][1]])
 rect1 = np.reshape(np.array([rect_coordinates[0][0], rect_coordinates[0][1], 1]), (3, 1))
 rect2 = np.reshape(np.array([rect_coordinates[1][0], rect_coordinates[1][1], 1]), (3, 1))
 first_image = cv2.cvtColor(first_image, cv2.COLOR_BGR2GRAY)
-
+# first_image = gamma_correction(first_image, 0.8)
 first_image = cv2.pyrDown(first_image)
-
+first_image = cv2.pyrDown(first_image)
+# first_image = cv2.pyrDown(first_image)
+# first_image = cv2.pyrDown(first_image)
+# first_image = gamma_correction(first_image, 0.7)
 
 count = 0
 
 img_list = []
 # first_image = cv2.resize(first_image, dimen, interpolation=cv2.INTER_AREA)
 
-
+gamma = 0.7
 for next_img in img_array:
     next_img = cv2.cvtColor(next_img, cv2.COLOR_BGR2GRAY)
     next_img_untouched = next_img.copy()
-
+    # next_img = gamma_correction(next_img, 0.8)
     next_img = cv2.pyrDown(next_img)
-
-    layers = 2
+    next_img = cv2.pyrDown(next_img)
     # next_img = cv2.pyrDown(next_img)
+    # next_img = cv2.pyrDown(next_img)
+    next_img = gamma_correction(next_img, gamma)
+    # next_img = cv2.pyrDown(next_img)
+
+    layers = 4
+    # clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    # cl1 = clahe.apply(next_img)
+
     p = LucasKanadeAffine(first_image, next_img)
-    # print('p : ', p)
     newrect1 = np.matmul(p, rect1)
     newrect2 = np.matmul(p, rect2)
     cv2.rectangle(next_img_untouched, (int(layers*newrect1[0]), int(layers*newrect1[1])), (int(layers*newrect2[0]), int(layers*newrect2[1])), (0, 255, 0), 2)
+
+    # small_count  = 0
+    # if int(layers*newrect1[0]) > int(layers*newrect2[0]):
+    #     a = int(layers*newrect2[0])
+    #     b = int(layers*newrect1[0])
+    # else:
+    #     a = int(layers*newrect1[0])
+    #     b = int(layers*newrect2[0])
+    # if int(layers*newrect1[1])> int(layers*newrect2[1]):
+    #     c = int(layers*newrect2[1])
+    #     d = int(layers*newrect1[1])
+    # else:
+    #     c = int(layers*newrect1[1])
+    #     d = int(layers*newrect2[1])
+    #
+    # val = []
+    #
+    # for i in next_img_untouched[a:b,c:d]:
+    #     for c in i:
+    #         val.append(c)
+    # try:
+    #     avg = Average(val)
+    #     print(count ,avg,gamma)
+    # except:
+    #     avg = 150.0
+    #     print(count,avg,gamma)
+    val2 = []
+    for i in next_img_untouched:
+        for c in i:
+            val2.append(c)
+    try:
+        avg2 = Average(val2)
+        print('count > ', count, 'IMAGE_AVG = ',avg2)
+    except:
+        avg2 = 150.0
+        print('count > ', count, 'IMAGE_AVG = ',avg2)
+    if avg2 < 110.0 or avg2 == 150.0:
+        gamma = 0.7
+    elif avg2 >
+    else:
+        gamma = 1.0
+    # if avg < 110.0 or avg == 150.0:
+    #     gamma = 0.7
+    # else:
+    #     gamma = 1.0
+
+
+    # print('small_count' , small_count)
+        # print(count , '> > ' , Average(i))
     cv2.imwrite("all_new_imgs_CAR/%d.jpg" % count, next_img_untouched)
     img_list.append(next_img_untouched)
-    print(count)
+
     count += 1
 
 
