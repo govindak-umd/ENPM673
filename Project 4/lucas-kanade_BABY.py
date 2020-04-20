@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Apr 15 16:07:10 2020
-
-@author: nsraj
-"""
 
 import numpy as np
 import cv2
@@ -80,12 +75,19 @@ def LucasKanadeAffine(It, It1, threshold=0.005, iters=100):
             break
 
 
-    # print('%d %.4f'%(i, np.linalg.norm(delta_p)))
+
     return M
 
 
+pyramid_layers = 4
+remultiply_factor = 2**pyramid_layers
+divide_factror = float(1/remultiply_factor)
+
 ##dragon baby
-rect_coordinates = [(int(0.03125*149),int(0.03125*66)), (int(0.03125*224), int(0.03125*153))]
+rect_coordinates = [(int(divide_factror*149),int(divide_factror*66)), (int(divide_factror*224), int(divide_factror*153))]
+
+MAIN_WIDTH = 224 - 149
+MAIN_HEIGHT = 153 - 66
 
 rect = np.array([rect_coordinates[0][0], rect_coordinates[0][1], rect_coordinates[1][0], rect_coordinates[1][1]])
 rect1 = np.reshape(np.array([rect_coordinates[0][0], rect_coordinates[0][1], 1]), (3, 1))
@@ -96,38 +98,45 @@ first_image = cv2.pyrDown(first_image)
 first_image = cv2.pyrDown(first_image)
 first_image = cv2.pyrDown(first_image)
 first_image = cv2.pyrDown(first_image)
-first_image = cv2.pyrDown(first_image)
+
+first_image = cv2.equalizeHist(first_image)
 
 count = 0
 
 img_list = []
-# first_image = cv2.resize(first_image, dimen, interpolation=cv2.INTER_AREA)
 
 
 for next_img in img_array:
+
     next_img_untouched = next_img.copy()
+
     next_img = cv2.cvtColor(next_img, cv2.COLOR_BGR2GRAY)
 
     next_img = cv2.pyrDown(next_img)
     next_img = cv2.pyrDown(next_img)
     next_img = cv2.pyrDown(next_img)
     next_img = cv2.pyrDown(next_img)
-    next_img = cv2.pyrDown(next_img)
 
-    # next_img = cv2.pyrDown(next_img)
+    next_img = cv2.equalizeHist(next_img)
+
+
     p = LucasKanadeAffine(first_image, next_img)
-    # print('p : ', p)
+
     newrect1 = np.matmul(p, rect1)
     newrect2 = np.matmul(p, rect2)
-    cv2.rectangle(next_img_untouched, (int(32*newrect1[0]), int(32*newrect1[1])), (int(32*newrect2[0]), int(32*newrect2[1])), (0, 0, 255), 2)
+
+    x_1 = int(remultiply_factor*newrect1[0])
+    y_1 = int(remultiply_factor*newrect1[1])
+
+    cv2.rectangle(next_img_untouched, (x_1,y_1), (x_1 + MAIN_WIDTH,y_1+MAIN_HEIGHT), (255, 0, 255), 2)
+
     cv2.imwrite("all_new_imgs_BABY/%d.jpg" % count, next_img_untouched)
+
     img_list.append(next_img_untouched)
     print(count)
     count += 1
 
-
-
-out = cv2.VideoWriter('all_new_imgs_BABY/baby_dragon.avi', cv2.VideoWriter_fourcc(*'XVID'), 5.0, (640, 360))
+out = cv2.VideoWriter('all_new_imgs_BABY/baby_dragon.avi', cv2.VideoWriter_fourcc(*'XVID'), 15.0, (640, 360))
 for image in img_list:
     out.write(image)
     cv2.waitKey(10)

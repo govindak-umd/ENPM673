@@ -1,16 +1,33 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Apr 15 16:07:10 2020
-
-@author: nsraj
-"""
 
 import numpy as np
 import cv2
 import glob
 from scipy.ndimage import affine_transform
 import matplotlib.pyplot as plt
-from scipy.interpolate import RectBivariateSpline
+import math
+
+def adjust_gamma(image, gamma):
+    invGamma = 1.0 / gamma
+    table = np.array([((i / 255.0) ** invGamma) * 255 for i in np.arange(0, 256)])
+    return cv2.LUT(image.astype(np.uint8), table.astype(np.uint8))
+
+def img_improve (img,gamma):
+    blurred_img = cv2.GaussianBlur(img, (7, 7), 0)
+    # converting the image to HSV
+    img2hsv = cv2.cvtColor(blurred_img, cv2.COLOR_BGR2HSV)
+    hsv_v = img2hsv[:, :, 2]
+    # finding the CLAHE
+    clahe = cv2.createCLAHE(clipLimit=4.0, tileGridSize=(16, 16))  # increased values may cause noise
+    cl1 = clahe.apply(hsv_v)
+    # setting the gamma value, increased values may cause noise
+    cl1 = adjust_gamma(cl1, gamma=gamma)
+    # adding the last V layer back to the HSV image
+    img2hsv[:, :, 2] = cl1
+    # converting back from HSV to BGR format
+    improved_image = cv2.cvtColor(img2hsv, cv2.COLOR_HSV2BGR)
+    return improved_image
+
 img_array = []
 for filename in glob.glob('Car4/Car4/img/*.jpg'):
     img = cv2.imread(filename)
@@ -20,19 +37,11 @@ for filename in glob.glob('Car4/Car4/img/*.jpg'):
 
 
 first_image = img_array[0]
-# # now let's initialize the list of reference point 
+# # now let's initialize the list of reference point
 ref_point = []
 crop = False
 
-def gamma_correction(img, correction):
-    img = img/255.0
-    img = cv2.pow(img, correction)
-    return np.uint8(img*255)
-
-def Average(lst):
-    return sum(lst) / len(lst)
-
-def LucasKanadeAffine(It, It1, threshold=0.005, iters=15):
+def LucasKanadeAffine(It, It1, threshold=0.005, iters=100):
     '''
     [input]
     * It - Template image
@@ -58,7 +67,6 @@ def LucasKanadeAffine(It, It1, threshold=0.005, iters=15):
         # Step 2 - Compute error image with common pixels
         mask = affine_transform(np.ones(It1.shape), np.flip(M)[..., [1, 2, 0]])
         error_img = (mask * It) - (mask * warp_img)
-        #error_img = It-warp_img
         # Step 3 - Compute and warp the gradient
         gradient = np.dstack(np.gradient(It1)[::-1])
         gradient[:, :, 0] = affine_transform(gradient[:, :, 0], np.flip(M)[..., [1, 2, 0]])
@@ -89,109 +97,171 @@ def LucasKanadeAffine(It, It1, threshold=0.005, iters=15):
             break
 
 
-    # print('%d %.4f'%(i, np.linalg.norm(delta_p)))
     return M
 
+pyramid_layers = 3
+remultiply_factor = 2**pyramid_layers
+divide_factror = float(1/remultiply_factor)
+def Average(lst):
+    return sum(lst) / len(lst)
 
+##car
+rect_coordinates = [(int(divide_factror*81),int(divide_factror*56)), (int(divide_factror*166), int(divide_factror*123))]
+rect_coordinates_orig = [(81,56), (166,123)]
 
-reduction = 0.25
-## car
-rect_coordinates = [(int(reduction*70),int(reduction*51)), (int(reduction*177), int(reduction*138))]
-
+MAIN_WIDTH = 166 - 81
+MAIN_HEIGHT = 123-56
 rect = np.array([rect_coordinates[0][0], rect_coordinates[0][1], rect_coordinates[1][0], rect_coordinates[1][1]])
+
 rect1 = np.reshape(np.array([rect_coordinates[0][0], rect_coordinates[0][1], 1]), (3, 1))
 rect2 = np.reshape(np.array([rect_coordinates[1][0], rect_coordinates[1][1], 1]), (3, 1))
+first_image = img_improve(first_image, 1.4)
 first_image = cv2.cvtColor(first_image, cv2.COLOR_BGR2GRAY)
-# first_image = gamma_correction(first_image, 0.8)
-first_image = cv2.pyrDown(first_image)
-first_image = cv2.pyrDown(first_image)
-# first_image = cv2.pyrDown(first_image)
-# first_image = cv2.pyrDown(first_image)
-# first_image = gamma_correction(first_image, 0.7)
+first_image = cv2.equalizeHist(first_image)
 
-count = 0
+template = first_image[rect_coordinates_orig[0][1] : rect_coordinates_orig[1][1], rect_coordinates_orig[0][0] : rect_coordinates_orig[1][0]]
+
+#finding average pixel values in the template:
+pixel_vals = []
+for i in first_image:
+    for c in i:
+        pixel_vals.append(c)
+average_template_val = Average(pixel_vals)
+print ('average_template_val pixel values : ',average_template_val)
+
+
+first_image = cv2.pyrDown(first_image)
+first_image = cv2.GaussianBlur(first_image,(7,7),0)
+first_image = cv2.pyrDown(first_image)
+first_image = cv2.GaussianBlur(first_image,(3,3),0)
+first_image = cv2.pyrDown(first_image)
+
+
+
+main_count = 0
 
 img_list = []
-# first_image = cv2.resize(first_image, dimen, interpolation=cv2.INTER_AREA)
 
-gamma = 0.7
 for next_img in img_array:
-    next_img = cv2.cvtColor(next_img, cv2.COLOR_BGR2GRAY)
-    next_img_untouched = next_img.copy()
-    # next_img = gamma_correction(next_img, 0.8)
-    next_img = cv2.pyrDown(next_img)
-    next_img = cv2.pyrDown(next_img)
-    # next_img = cv2.pyrDown(next_img)
-    # next_img = cv2.pyrDown(next_img)
-    next_img = gamma_correction(next_img, gamma)
-    # next_img = cv2.pyrDown(next_img)
 
-    layers = 4
-    # clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    # cl1 = clahe.apply(next_img)
+    next_img_untouched = next_img.copy()
+
+
+    next_img_BGR = next_img.copy()
+    next_img_BGR_grayed = cv2.cvtColor(next_img, cv2.COLOR_BGR2GRAY)
+
+    pixel_vals =[]
+    for i in next_img_BGR_grayed:
+        for c in i:
+            pixel_vals.append(c)
+    average_image_brightness = Average(pixel_vals)
+    # print('CURRENT: average_template_val pixel values : ', average_image_brightness)
+
+    count_up = 1.0
+    while average_image_brightness < 126:
+        # print('LOOPING .. >',average_image_brightness)
+        next_img_BGR = img_improve(next_img_BGR,count_up)
+        pixel_vals_loop =[]
+        next_img_BGR_grayed = cv2.cvtColor(next_img_BGR, cv2.COLOR_BGR2GRAY)
+        for i in next_img_BGR_grayed:
+            for c in i:
+                pixel_vals_loop.append(c)
+        average_image_brightness = Average(pixel_vals_loop)
+        # print('average_image_brightness',average_image_brightness,'gamma is now > ',count_up)
+        count_up+=0.2
+
+    count_down = 1.0
+    while average_image_brightness > 132.0:
+        # print('LOOPING .. >',average_image_brightness)
+        next_img_BGR = img_improve(next_img_BGR,count_down)
+        pixel_vals_loop =[]
+        next_img_BGR_grayed = cv2.cvtColor(next_img_BGR, cv2.COLOR_BGR2GRAY)
+        for i in next_img_BGR_grayed:
+            for c in i:
+                pixel_vals_loop.append(c)
+        average_image_brightness = Average(pixel_vals_loop)
+        # print('average_image_brightness',average_image_brightness, 'gamma is now > ',count_down)
+        count_down-=0.2
+
+
+
+    next_img = cv2.pyrDown(next_img_BGR_grayed)
+    next_img = cv2.pyrDown(next_img)
+    next_img = cv2.pyrDown(next_img)
+    next_img = cv2.equalizeHist(next_img)
+
+    if main_count ==230:
+        rect_coordinates = [(int(divide_factror * 158), int(divide_factror * 68)),
+                            (int(divide_factror * 228), int(divide_factror * 119))]
+        rect = np.array(
+            [rect_coordinates[0][0], rect_coordinates[0][1], rect_coordinates[1][0], rect_coordinates[1][1]])
+
+        rect1 = np.reshape(np.array([rect_coordinates[0][0], rect_coordinates[0][1], 1]), (3, 1))
+        rect2 = np.reshape(np.array([rect_coordinates[1][0], rect_coordinates[1][1], 1]), (3, 1))
+
+    if main_count ==248:
+        rect_coordinates = [(int(divide_factror * 171), int(divide_factror * 67)),
+                            (int(divide_factror * 239), int(divide_factror * 119))]
+        rect = np.array(
+            [rect_coordinates[0][0], rect_coordinates[0][1], rect_coordinates[1][0], rect_coordinates[1][1]])
+
+        rect1 = np.reshape(np.array([rect_coordinates[0][0], rect_coordinates[0][1], 1]), (3, 1))
+        rect2 = np.reshape(np.array([rect_coordinates[1][0], rect_coordinates[1][1], 1]), (3, 1))
+
+    if main_count ==331:
+        rect_coordinates = [(int(divide_factror * 216), int(divide_factror * 72)),
+                            (int(divide_factror * 272), int(divide_factror * 118))]
+        rect = np.array(
+            [rect_coordinates[0][0], rect_coordinates[0][1], rect_coordinates[1][0], rect_coordinates[1][1]])
+
+        rect1 = np.reshape(np.array([rect_coordinates[0][0], rect_coordinates[0][1], 1]), (3, 1))
+        rect2 = np.reshape(np.array([rect_coordinates[1][0], rect_coordinates[1][1], 1]), (3, 1))
+
+    if main_count ==385:
+        rect_coordinates = [(int(divide_factror * 228), int(divide_factror * 71)),
+                            (int(divide_factror * 289), int(divide_factror * 119))]
+        rect = np.array(
+            [rect_coordinates[0][0], rect_coordinates[0][1], rect_coordinates[1][0], rect_coordinates[1][1]])
+
+        rect1 = np.reshape(np.array([rect_coordinates[0][0], rect_coordinates[0][1], 1]), (3, 1))
+        rect2 = np.reshape(np.array([rect_coordinates[1][0], rect_coordinates[1][1], 1]), (3, 1))
+
+
+    if main_count ==596:
+        rect_coordinates = [(int(divide_factror * 225), int(divide_factror * 63)),
+                            (int(divide_factror * 308), int(divide_factror * 126))]
+        rect = np.array(
+            [rect_coordinates[0][0], rect_coordinates[0][1], rect_coordinates[1][0], rect_coordinates[1][1]])
+
+        rect1 = np.reshape(np.array([rect_coordinates[0][0], rect_coordinates[0][1], 1]), (3, 1))
+        rect2 = np.reshape(np.array([rect_coordinates[1][0], rect_coordinates[1][1], 1]), (3, 1))
+
+    if main_count ==637:
+        rect_coordinates = [(int(divide_factror * 260), int(divide_factror * 62)),
+                            (int(divide_factror * 344), int(divide_factror * 137))]
+        rect = np.array(
+            [rect_coordinates[0][0], rect_coordinates[0][1], rect_coordinates[1][0], rect_coordinates[1][1]])
+
+        rect1 = np.reshape(np.array([rect_coordinates[0][0], rect_coordinates[0][1], 1]), (3, 1))
+        rect2 = np.reshape(np.array([rect_coordinates[1][0], rect_coordinates[1][1], 1]), (3, 1))
 
     p = LucasKanadeAffine(first_image, next_img)
     newrect1 = np.matmul(p, rect1)
     newrect2 = np.matmul(p, rect2)
-    cv2.rectangle(next_img_untouched, (int(layers*newrect1[0]), int(layers*newrect1[1])), (int(layers*newrect2[0]), int(layers*newrect2[1])), (0, 255, 0), 2)
+    x_1 = int(remultiply_factor*newrect1[0])
+    y_1 = int(remultiply_factor*newrect1[1])
+    cv2.rectangle(next_img_untouched, (x_1,y_1), (x_1 + MAIN_WIDTH,y_1+MAIN_HEIGHT), (0, 0, 255), 2)
+    cv2.imwrite("all_new_imgs_CAR/%d.jpg" % main_count, next_img_untouched)
 
-    # small_count  = 0
-    # if int(layers*newrect1[0]) > int(layers*newrect2[0]):
-    #     a = int(layers*newrect2[0])
-    #     b = int(layers*newrect1[0])
-    # else:
-    #     a = int(layers*newrect1[0])
-    #     b = int(layers*newrect2[0])
-    # if int(layers*newrect1[1])> int(layers*newrect2[1]):
-    #     c = int(layers*newrect2[1])
-    #     d = int(layers*newrect1[1])
-    # else:
-    #     c = int(layers*newrect1[1])
-    #     d = int(layers*newrect2[1])
-    #
-    # val = []
-    #
-    # for i in next_img_untouched[a:b,c:d]:
-    #     for c in i:
-    #         val.append(c)
-    # try:
-    #     avg = Average(val)
-    #     print(count ,avg,gamma)
-    # except:
-    #     avg = 150.0
-    #     print(count,avg,gamma)
-    val2 = []
-    for i in next_img_untouched:
-        for c in i:
-            val2.append(c)
-    try:
-        avg2 = Average(val2)
-        print('count > ', count, 'IMAGE_AVG = ',avg2)
-    except:
-        avg2 = 150.0
-        print('count > ', count, 'IMAGE_AVG = ',avg2)
-    if avg2 < 110.0 or avg2 == 150.0:
-        gamma = 0.7
-    elif avg2 >
-    else:
-        gamma = 1.0
-    # if avg < 110.0 or avg == 150.0:
-    #     gamma = 0.7
-    # else:
-    #     gamma = 1.0
-
-
-    # print('small_count' , small_count)
-        # print(count , '> > ' , Average(i))
-    cv2.imwrite("all_new_imgs_CAR/%d.jpg" % count, next_img_untouched)
     img_list.append(next_img_untouched)
+    print(main_count)
+    main_count += 1
 
-    count += 1
 
 
-
-out = cv2.VideoWriter('all_new_imgs_CAR/CAR4.avi', cv2.VideoWriter_fourcc(*'XVID'), 5.0, (360, 240))
+out = cv2.VideoWriter('all_new_imgs_CAR/CAR.avi', cv2.VideoWriter_fourcc(*'XVID'), 15.0, (360, 240))
 for image in img_list:
     out.write(image)
     cv2.waitKey(10)
+
 out.release()
