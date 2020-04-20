@@ -1,8 +1,7 @@
 		Project 4 Submission - ENPM673 - Perception for Autonomous Robotics
+		
 TEAM
 ------
-## Group members :
-
     Ashwin Prabhakar
     Govind Ajith Kumar
     Rajeshwar N S 
@@ -25,7 +24,8 @@ The codes in .py files are as follows:
 
 NOTE: Ensure that 'APART FROM THE DATASET', the following folders are in the same directory as the codes as well 
 ------
-    Directories are:
+Directories are:
+
     all_new_imgs_BABY
 
     all_new_imgs_CAR
