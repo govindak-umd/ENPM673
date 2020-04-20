@@ -10,6 +10,8 @@ import cv2
 import glob
 from scipy.ndimage import affine_transform
 import matplotlib.pyplot as plt
+import math
+
 img_array = []
 for filename in glob.glob('Bolt2/Bolt2/img/*.jpg'):
     img = cv2.imread(filename)
@@ -19,11 +21,11 @@ for filename in glob.glob('Bolt2/Bolt2/img/*.jpg'):
 
 
 first_image = img_array[0]
-# # now let's initialize the list of reference point 
+# # now let's initialize the list of reference point
 ref_point = []
 crop = False
 
-def LucasKanadeAffine(It, It1, threshold=0.005, iters=100):
+def LucasKanadeAffine(It, It1, threshold=0.005, iters=10):
     '''
     [input]
     * It - Template image
@@ -44,6 +46,7 @@ def LucasKanadeAffine(It, It1, threshold=0.005, iters=100):
     # for i in range(iters):
         # Step 1 - Warp image
     for i in range(iters):
+
         warp_img = affine_transform(It1, np.flip(M)[..., [1, 2, 0]])
 
         # Step 2 - Compute error image with common pixels
@@ -79,34 +82,47 @@ def LucasKanadeAffine(It, It1, threshold=0.005, iters=100):
         if np.linalg.norm(delta_p) <= threshold:
             break
 
-
-    # print('%d %.4f'%(i, np.linalg.norm(delta_p)))
     return M
 
+pyramid_layers = 3
+if pyramid_layers ==1:
+    remultiply_factor = 1
+    divide_factror = 1
+else:
+    remultiply_factor = 2**pyramid_layers
+    divide_factror = float(1/remultiply_factor)
 
+def Average(lst):
+    return sum(lst) / len(lst)
 
 ##bolt
-rect_coordinates = [(int(0.125*269),int(0.125*75)), (int(0.125*303), int(0.125*139))]
-# [(267, 81), (308, 144)]
-# [(257, 58), (308, 150)]
+rect_coordinates = [(int(divide_factror*269),int(divide_factror*75)), (int(divide_factror*303), int(divide_factror*139))]
+rect_coordinates_orig = [(269,75), (303,139)]
+
+
+MAIN_WIDTH = 303 - 269
+MAIN_HEIGHT = 139 - 75
+
 rect = np.array([rect_coordinates[0][0], rect_coordinates[0][1], rect_coordinates[1][0], rect_coordinates[1][1]])
+
 rect1 = np.reshape(np.array([rect_coordinates[0][0], rect_coordinates[0][1], 1]), (3, 1))
 rect2 = np.reshape(np.array([rect_coordinates[1][0], rect_coordinates[1][1], 1]), (3, 1))
+
 first_image = cv2.cvtColor(first_image, cv2.COLOR_BGR2GRAY)
+template = first_image[rect_coordinates_orig[0][1] : rect_coordinates_orig[1][1], rect_coordinates_orig[0][0] : rect_coordinates_orig[1][0]]
 
 first_image = cv2.pyrDown(first_image)
 first_image = cv2.pyrDown(first_image)
 first_image = cv2.pyrDown(first_image)
 
-
-count = 0
+main_count = 0
 
 img_list = []
-# first_image = cv2.resize(first_image, dimen, interpolation=cv2.INTER_AREA)
 
 
 for next_img in img_array:
-    next_img_untouched = next_img.copy()
+
+    next_img_BGR = next_img.copy()
     next_img = cv2.cvtColor(next_img, cv2.COLOR_BGR2GRAY)
 
     next_img = cv2.pyrDown(next_img)
@@ -114,20 +130,67 @@ for next_img in img_array:
     next_img = cv2.pyrDown(next_img)
 
 
-    # next_img = cv2.pyrDown(next_img)
+    if main_count ==16:
+        rect_coordinates = [(int(divide_factror * 251), int(divide_factror * 65)),
+                            (int(divide_factror * 289), int(divide_factror * 129))]
+        rect = np.array(
+            [rect_coordinates[0][0], rect_coordinates[0][1], rect_coordinates[1][0], rect_coordinates[1][1]])
+
+        rect1 = np.reshape(np.array([rect_coordinates[0][0], rect_coordinates[0][1], 1]), (3, 1))
+        rect2 = np.reshape(np.array([rect_coordinates[1][0], rect_coordinates[1][1], 1]), (3, 1))
+
+
+    if main_count ==135:
+        rect_coordinates = [(int(divide_factror * 308), int(divide_factror * 82)),
+                            (int(divide_factror * 342), int(divide_factror * 146))]
+        rect = np.array(
+            [rect_coordinates[0][0], rect_coordinates[0][1], rect_coordinates[1][0], rect_coordinates[1][1]])
+
+        rect1 = np.reshape(np.array([rect_coordinates[0][0], rect_coordinates[0][1], 1]), (3, 1))
+        rect2 = np.reshape(np.array([rect_coordinates[1][0], rect_coordinates[1][1], 1]), (3, 1))
+
+    if main_count ==193:
+        rect_coordinates = [(int(divide_factror * 335), int(divide_factror * 79)),
+                            (int(divide_factror * 369), int(divide_factror * 143))]
+        rect = np.array(
+            [rect_coordinates[0][0], rect_coordinates[0][1], rect_coordinates[1][0], rect_coordinates[1][1]])
+
+        rect1 = np.reshape(np.array([rect_coordinates[0][0], rect_coordinates[0][1], 1]), (3, 1))
+        rect2 = np.reshape(np.array([rect_coordinates[1][0], rect_coordinates[1][1], 1]), (3, 1))
+
+    if main_count ==279:
+        rect_coordinates = [(int(divide_factror * 359), int(divide_factror * 104)),
+                            (int(divide_factror * 393), int(divide_factror * 168))]
+        rect = np.array(
+            [rect_coordinates[0][0], rect_coordinates[0][1], rect_coordinates[1][0], rect_coordinates[1][1]])
+
+        rect1 = np.reshape(np.array([rect_coordinates[0][0], rect_coordinates[0][1], 1]), (3, 1))
+        rect2 = np.reshape(np.array([rect_coordinates[1][0], rect_coordinates[1][1], 1]), (3, 1))
+
+    if main_count ==289:
+        rect_coordinates = [(int(divide_factror * 368), int(divide_factror * 110)),
+                            (int(divide_factror * 392), int(divide_factror * 174))]
+        rect = np.array(
+            [rect_coordinates[0][0], rect_coordinates[0][1], rect_coordinates[1][0], rect_coordinates[1][1]])
+
+        rect1 = np.reshape(np.array([rect_coordinates[0][0], rect_coordinates[0][1], 1]), (3, 1))
+        rect2 = np.reshape(np.array([rect_coordinates[1][0], rect_coordinates[1][1], 1]), (3, 1))
+
     p = LucasKanadeAffine(first_image, next_img)
-    # print('p : ', p)
     newrect1 = np.matmul(p, rect1)
     newrect2 = np.matmul(p, rect2)
-    cv2.rectangle(next_img_untouched, (int(8*newrect1[0]), int(8*newrect1[1])), (int(8*newrect2[0]), int(8*newrect2[1])), (0, 0, 255), 2)
-    cv2.imwrite("all_new_imgs_BOLT/%d.jpg" % count, next_img_untouched)
-    img_list.append(next_img_untouched)
-    print(count)
-    count += 1
 
+    x_1 = int(remultiply_factor*newrect1[0])
+    y_1 = int(remultiply_factor*newrect1[1])
 
+    cv2.rectangle(next_img_BGR, (x_1,y_1), (x_1 + MAIN_WIDTH,y_1+MAIN_HEIGHT), (255, 255, 0), 2)
+    cv2.imwrite("all_new_imgs_BOLT/%d.jpg" % main_count, next_img_BGR)
 
-out = cv2.VideoWriter('all_new_imgs_BOLT/bolt.avi', cv2.VideoWriter_fourcc(*'XVID'), 5.0, (480, 270))
+    img_list.append(next_img_BGR)
+    print(main_count)
+    main_count += 1
+
+out = cv2.VideoWriter('all_new_imgs_BOLT/bolt.avi', cv2.VideoWriter_fourcc(*'XVID'), 20.0, (480, 270))
 for image in img_list:
     out.write(image)
     cv2.waitKey(10)
