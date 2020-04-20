@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-
-
 import numpy as np
 import cv2
 import glob
 from scipy.ndimage import affine_transform
-import matplotlib.pyplot as plt
 import math
 
 def adjust_gamma(image, gamma):
@@ -110,7 +107,8 @@ rect_coordinates = [(int(divide_factror*81),int(divide_factror*56)), (int(divide
 rect_coordinates_orig = [(81,56), (166,123)]
 
 MAIN_WIDTH = 166 - 81
-MAIN_HEIGHT = 123-56
+MAIN_HEIGHT = 123 - 56
+
 rect = np.array([rect_coordinates[0][0], rect_coordinates[0][1], rect_coordinates[1][0], rect_coordinates[1][1]])
 
 rect1 = np.reshape(np.array([rect_coordinates[0][0], rect_coordinates[0][1], 1]), (3, 1))

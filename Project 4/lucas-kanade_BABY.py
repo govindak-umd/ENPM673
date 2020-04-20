@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
-
 import numpy as np
 import cv2
 import glob
 from scipy.ndimage import affine_transform
-import matplotlib.pyplot as plt
+import math
+
 img_array = []
 for filename in glob.glob('DragonBaby/DragonBaby/img/*.jpg'):
     img = cv2.imread(filename)
@@ -75,7 +74,7 @@ def LucasKanadeAffine(It, It1, threshold=0.005, iters=100):
             break
 
 
-
+    # print('%d %.4f'%(i, np.linalg.norm(delta_p)))
     return M
 
 
@@ -131,7 +130,6 @@ for next_img in img_array:
     cv2.rectangle(next_img_untouched, (x_1,y_1), (x_1 + MAIN_WIDTH,y_1+MAIN_HEIGHT), (255, 0, 255), 2)
 
     cv2.imwrite("all_new_imgs_BABY/%d.jpg" % count, next_img_untouched)
-
     img_list.append(next_img_untouched)
     print(count)
     count += 1

@@ -1,15 +1,7 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Apr 15 16:07:10 2020
-
-@author: nsraj
-"""
-
 import numpy as np
 import cv2
 import glob
 from scipy.ndimage import affine_transform
-import matplotlib.pyplot as plt
 import math
 
 img_array = []
@@ -46,6 +38,7 @@ def LucasKanadeAffine(It, It1, threshold=0.005, iters=10):
     # for i in range(iters):
         # Step 1 - Warp image
     for i in range(iters):
+
 
         warp_img = affine_transform(It1, np.flip(M)[..., [1, 2, 0]])
 
