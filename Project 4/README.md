@@ -37,7 +37,6 @@ These can be empty folders that will get populated when the code is run.
 YOUTUBE VIDEOS
 ------
 
-## The Youtube links to the videos are as follows:
 
     https://youtu.be/4Lh4ISospVQ
     https://youtu.be/i4TaXdF2sTY
@@ -46,7 +45,6 @@ YOUTUBE VIDEOS
 GITHUB
 ------
 
-## Github repo  : 
 
     https://github.com/govindak-umd/ENPM673/tree/master/Project%204
 
