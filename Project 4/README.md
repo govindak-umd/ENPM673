@@ -16,7 +16,8 @@ The codes in .py files are as follows:
     lucas-kanade_BABY.py (lucas kanade algorithm for detection)
     rectangle_coord_Baby.py (to draw the rectangular coordinates around the baby)
 
-    lucas-kanade_CAR.py (lucas kanade algorithm for detection)
+    lucas-kanade_CAR.py (lucas kanade algorithm for car detection WITHOUT accounting for illumination change)
+    lucas-kanade_CAR_brightened.py (lucas kanade algorithm for car detection AFTER accounting for illumination change)
     rectangle_coord_Car.py (to draw the rectangular coordinates around the car
 
     lucas-kanade_BOLT.py (lucas kanade algorithm for detection)
@@ -41,6 +42,7 @@ YOUTUBE VIDEOS
     https://youtu.be/4Lh4ISospVQ
     https://youtu.be/i4TaXdF2sTY
     https://youtu.be/o-suy8SslAo
+    https://youtu.be/Zbeu6yfYEiQ
    
 GITHUB
 ------
