@@ -148,6 +148,44 @@ for next_img in img_array:
     next_img_BGR = next_img.copy()
     next_img_BGR_grayed = cv2.cvtColor(next_img, cv2.COLOR_BGR2GRAY)
 
+    pixel_vals =[]
+    for i in next_img_BGR_grayed:
+        for c in i:
+            pixel_vals.append(c)
+    average_image_brightness = Average(pixel_vals)
+    # print('CURRENT: average_template_val pixel values : ', average_image_brightness)
+
+    count_up = 1.0
+
+    #BRIGHTNESS CHANGED BY LOOPING THROUGH UNTIL THE BRIGHTNESS OF THE TEMPLATE IS REACHED
+
+    while average_image_brightness < 126:
+        # print('LOOPING .. >',average_image_brightness)
+        next_img_BGR = img_improve(next_img_BGR,count_up)
+        pixel_vals_loop =[]
+        next_img_BGR_grayed = cv2.cvtColor(next_img_BGR, cv2.COLOR_BGR2GRAY)
+        for i in next_img_BGR_grayed:
+            for c in i:
+                pixel_vals_loop.append(c)
+        average_image_brightness = Average(pixel_vals_loop)
+        # print('average_image_brightness',average_image_brightness,'gamma is now > ',count_up)
+        count_up+=0.2
+
+    count_down = 1.0
+    while average_image_brightness > 132.0:
+        # print('LOOPING .. >',average_image_brightness)
+        next_img_BGR = img_improve(next_img_BGR,count_down)
+        pixel_vals_loop =[]
+        next_img_BGR_grayed = cv2.cvtColor(next_img_BGR, cv2.COLOR_BGR2GRAY)
+        for i in next_img_BGR_grayed:
+            for c in i:
+                pixel_vals_loop.append(c)
+        average_image_brightness = Average(pixel_vals_loop)
+        # print('average_image_brightness',average_image_brightness, 'gamma is now > ',count_down)
+        count_down-=0.2
+
+
+
     next_img = cv2.pyrDown(next_img_BGR_grayed)
     next_img = cv2.pyrDown(next_img)
     next_img = cv2.pyrDown(next_img)
