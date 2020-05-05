@@ -22,6 +22,8 @@ YOUTUBE VIDEOS
 
 
     https://youtu.be/Awa_ivgOmE0
+    https://youtu.be/D0Xwt2t3DMI
+    https://youtu.be/abnfoyUnfcA
    
 GITHUB
 ------
