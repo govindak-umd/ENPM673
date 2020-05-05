@@ -34,9 +34,9 @@ The codes in .py files are as follows:
 
 read_images.py (data set preperation and conversion of image folder to .npy)
 
-NOTE: THIS HAS TO BE RUN, OR ELSE, PLEASE DOWNLOAD THE .npy dataset FROM THE GOOGLE DRIVE LINK (),
-SO THAT THE OTHER TWO CODES CAN RUN. THE DATA SET IS 4.4GB  AND HENCE, COULDN'T BE ATTACHED.
-
+	NOTE: THIS HAS TO BE RUN, OR ELSE, PLEASE DOWNLOAD THE .npy dataset FROM THE GOOGLE DRIVE LINK (),
+	SO THAT THE OTHER TWO CODES CAN RUN. THE DATA SET IS 4.4GB  AND HENCE, COULDN'T BE ATTACHED.
+	
 builtin_structure_motion.py (Code for visual odometry using built in functions)
 
 Original_stereo.py (Code for visual odometry using user defined functions)
