@@ -1,9 +1,9 @@
 		Project 5 Submission - ENPM673 - Perception for Autonomous Robotics
-	![](SIFT-FLANN.png)<br/>	
-	<br/>
-	![](ORB-FLANN.png)<br/>	
-	<br/>
-	![](builtin_final.png)<br/>	
+![](SIFT-FLANN.png)<br/>	
+<br/>
+![](ORB-FLANN.png)<br/>	
+<br/>
+![](builtin_final.png)<br/>	
 	
 
 TEAM
