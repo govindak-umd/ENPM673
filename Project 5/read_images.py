@@ -13,6 +13,7 @@ for file in glob.glob('stereo/centre/*.png'):
     tmp = cv2.imread(file,0)
     colour_img = cv2.cvtColor(tmp, cv2.COLOR_BAYER_GR2RGB)
     undistorted = UndistortImage(colour_img,LUT)
-    images.append(undistorted)
+    gray_img = cv2.cvtColor(undistorted, cv2.COLOR_RGB2GRAY)
+    images.append(gray_img)
 
 np.save('image_list.npy',np.array(images))
